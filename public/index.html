@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>NewsMania - Select Your News Source</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+    <header>
+        <h1>📰 NewsMania</h1>
+        <p>Choose your favorite news source below</p>
+
+        <div class="toggle-container">
+            <label class="switch">
+                <input type="checkbox" id="dark-toggle" />
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Dark Mode</span>
+        </div>
+    </header>
+
+    <nav>
+        <button class="source-btn active" data-source="all">All Mixed</button>
+        <button class="source-btn" data-source="theHindu">The Hindu</button>
+        <button class="source-btn" data-source="hindustanTimes">Hindustan Times</button>
+        <button class="source-btn" data-source="timesOfIndia">Times of India</button>
+    </nav>
+
+    <main>
+        <div class="search-box">
+    <input type="text" id="search-input" placeholder="Search news..." />
+</div>
+
+        <div id="news-container" class="grid"></div>
+
+        <section id="notepad">
+            <h2>Your Notepad 📝</h2>
+
+            <textarea id="note-input" placeholder="Write your note here..."></textarea>
+            <button id="save-note">Save Note</button>
+
+            <div id="notes-container">
+                <ul id="notes-list"></ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Made with ❤️ by Vatsal | Powered by Node.js &amp; jQuery &amp; MongoDB</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
