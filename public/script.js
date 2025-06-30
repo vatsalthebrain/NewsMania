@@ -1,74 +1,69 @@
-$(document).ready(function () {
+document.addEventListener('DOMContentLoaded', () => {
     let newsData = {};
 
-    const newsContainer = $('#news-container');
+    const newsContainer = document.getElementById('news-container');
+    const searchInput = document.getElementById('search-input');
+    const noteInput = document.getElementById('note-input');
+    const saveNoteBtn = document.getElementById('save-note');
+    const notesList = document.getElementById('notes-list');
+    const darkToggle = document.getElementById('dark-toggle');
 
-    // Load news from server
     function loadNews() {
-        newsContainer.html('<p>Loading news...</p>');
-        // Search filter
-$('#search-input').on('input', function () {
-    const query = $(this).val().toLowerCase();
+        newsContainer.innerHTML = '<p>Loading news...</p>';
 
-    $('.news-card').each(function () {
-        const title = $(this).find('h3').text().toLowerCase();
-        if (title.includes(query)) {
-            $(this).show();
-        } else {
-            $(this).hide();
-        }
-    });
-});
+        fetch('/news')
+            .then(res => res.json())
+            .then(data => {
+                newsData = data;
 
+                if (
+                    (!data.theHindu || data.theHindu.length === 0) &&
+                    (!data.hindustanTimes || data.hindustanTimes.length === 0) &&
+                    (!data.timesOfIndia || data.timesOfIndia.length === 0)
+                ) {
+                    newsContainer.innerHTML = '<p>No news found.</p>';
+                    return;
+                }
 
-        $.getJSON('/news', function (data) {
-            newsData = data;
-
-            if (
-                (!data.theHindu || data.theHindu.length === 0) &&
-                (!data.hindustanTimes || data.hindustanTimes.length === 0) &&
-                (!data.timesOfIndia || data.timesOfIndia.length === 0)
-            ) {
-                newsContainer.html('<p>No news found.</p>');
-                return;
-            }
-
-            showNews('all'); // default: show mixed news
-        }).fail(() => {
-            newsContainer.html('<p>Error loading news.</p>');
-        });
+                showNews('all'); // default
+            })
+            .catch(() => {
+                newsContainer.innerHTML = '<p>Error loading news.</p>';
+            });
     }
 
-    // Show news by source or all mixed
     function showNews(source) {
-        newsContainer.empty();
+        newsContainer.innerHTML = '';
 
         let items = [];
 
         if (source === 'all') {
-            items = [...(newsData.theHindu || []), ...(newsData.hindustanTimes || []), ...(newsData.timesOfIndia || [])];
+            items = [
+                ...(newsData.theHindu || []),
+                ...(newsData.hindustanTimes || []),
+                ...(newsData.timesOfIndia || [])
+            ];
             items = shuffleArray(items);
         } else {
             items = newsData[source] || [];
         }
 
         if (items.length === 0) {
-            newsContainer.html('<p>No news found for this source.</p>');
+            newsContainer.innerHTML = '<p>No news found for this source.</p>';
             return;
         }
 
         items.forEach(item => {
-            const card = $(`
-                <div class="news-card">
-                    <h3><a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a></h3>
-                    <span>Source: ${item.source}</span>
-                </div>
-            `);
-            newsContainer.append(card);
+            const card = document.createElement('div');
+            card.className = 'news-card';
+            card.innerHTML = `
+                <h3><a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.title}</a></h3>
+                <span>Source: ${item.source}</span>
+            `;
+            newsContainer.appendChild(card);
         });
     }
 
-    // Fisher-Yates shuffle to randomize array
     function shuffleArray(array) {
         let currentIndex = array.length, randomIndex;
         while (currentIndex !== 0) {
@@ -79,72 +74,71 @@ $('#search-input').on('input', function () {
         return array;
     }
 
-    // Source button click handler
-    $('nav').on('click', 'button.source-btn', function () {
-        $('button.source-btn').removeClass('active');
-        $(this).addClass('active');
-
-        const selectedSource = $(this).data('source');
-        showNews(selectedSource);
+    document.querySelectorAll('button.source-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('button.source-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const selectedSource = btn.dataset.source;
+            showNews(selectedSource);
+        });
     });
 
-    // Dark mode toggle
-    $('#dark-toggle').on('change', function () {
-        if (this.checked) {
-            $('body').addClass('dark');
-        } else {
-            $('body').removeClass('dark');
-        }
+    darkToggle.addEventListener('change', () => {
+        document.body.classList.toggle('dark', darkToggle.checked);
     });
 
-    // --- Notepad functionality ---
-
-    // Load notes from backend
-    function loadNotes() {
-        $.get('/notes', function (data) {
-            const list = $('#notes-list');
-            list.empty();
-            data.forEach(note => {
-                const li = $(`
-                    <li>
-                        <span>${note.text}</span>
-                        <button data-id="${note._id}">Delete</button>
-                    </li>
-                `);
-                list.append(li);
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            document.querySelectorAll('.news-card').forEach(card => {
+                const title = card.querySelector('h3').innerText.toLowerCase();
+                card.style.display = title.includes(query) ? 'block' : 'none';
             });
         });
     }
 
-    // Add new note
-    $('#save-note').on('click', function () {
-        const text = $('#note-input').val().trim();
+    // Notepad functions
+    function loadNotes() {
+        fetch('/notes')
+            .then(res => res.json())
+            .then(data => {
+                notesList.innerHTML = '';
+                data.forEach(note => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${note.text}</span>
+                        <button data-id="${note._id}">Delete</button>
+                    `;
+                    notesList.appendChild(li);
+                });
+            });
+    }
+
+    saveNoteBtn.addEventListener('click', () => {
+        const text = noteInput.value.trim();
         if (!text) return;
-        $.ajax({
-            url: '/notes',
+
+        fetch('/notes', {
             method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ text }),
-            success: function () {
-                $('#note-input').val('');
-                loadNotes();
-            }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        }).then(() => {
+            noteInput.value = '';
+            loadNotes();
         });
     });
 
-    // Delete note handler
-    $('#notes-list').on('click', 'button', function () {
-        const id = $(this).data('id');
-        $.ajax({
-            url: `/notes/${id}`,
-            method: 'DELETE',
-            success: function () {
+    notesList.addEventListener('click', e => {
+        if (e.target.tagName === 'BUTTON') {
+            const id = e.target.getAttribute('data-id');
+            fetch(`/notes/${id}`, {
+                method: 'DELETE'
+            }).then(() => {
                 loadNotes();
-            }
-        });
+            });
+        }
     });
 
-    // Initial load
     loadNews();
     loadNotes();
 });
